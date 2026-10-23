@@ -1,0 +1,57 @@
+@startuml despliegue
+skinparam dpi 170
+skinparam shadowing false
+skinparam defaultFontName Arial
+skinparam node {
+  BackgroundColor #FFFFFF
+  BorderColor #9A3412
+}
+skinparam artifact {
+  BackgroundColor #FFEDD5
+  BorderColor #C2410C
+}
+
+node "Dispositivo del cliente\n(PC o celular)" as Dispositivo {
+  artifact "Navegador web" as Navegador
+}
+
+cloud "Proveedor de nube (AWS, Azure o GCP)" {
+  node "Máquina virtual Linux\nUbuntu 22.04 + Docker Engine" as VM {
+    node "Red interna Docker (bridge)" as Red {
+      node "Contenedor gateway\n:8080 (publicado en :80)" as CGW {
+        artifact "gateway\n(Node.js 18 + Express)" as GW
+      }
+      node "Contenedor pedidos\n:4002" as CPED {
+        artifact "pedidos" as PED
+      }
+      node "Contenedor inventario\n:4001" as CINV {
+        artifact "inventario" as INV
+      }
+      node "Contenedor broker\n:4000" as CBRK {
+        artifact "broker de eventos" as BRK
+      }
+      node "Contenedor notificaciones\n:4003" as CNOT {
+        artifact "notificaciones" as NOT
+      }
+    }
+  }
+}
+
+node "Proveedores externos\n(correo, SMS, WhatsApp)" as Externos
+
+Navegador --> GW : HTTP(S) :80 / :443
+GW --> PED : HTTP/JSON
+GW --> INV : HTTP/JSON
+GW --> NOT : HTTP/JSON
+PED --> INV : HTTP/JSON\n(Circuit Breaker + Retry)
+PED --> BRK : publicar evento
+BRK --> NOT : entregar evento
+NOT ..> Externos : API del proveedor\n(fase de producción)
+
+note bottom of VM
+  Imagen única mercaoriente-cloud:1.0.0
+  La variable SERVICE define el rol de cada contenedor.
+  Escalamiento: réplicas de pedidos e inventario
+  detrás del gateway (o en un clúster administrado).
+end note
+@enduml

@@ -1,0 +1,135 @@
+@startuml clases
+skinparam dpi 170
+skinparam shadowing false
+skinparam defaultFontName Arial
+skinparam classAttributeIconSize 0
+skinparam packageStyle rectangle
+skinparam class {
+  BackgroundColor #FFFFFF
+  BorderColor #9A3412
+  HeaderBackgroundColor #FFEDD5
+}
+hide empty members
+
+package "Servicio Pedidos" {
+  class Pedido {
+    id : String
+    total : Number
+    estado : EstadoPedido
+    fecha : Date
+  }
+  class Cliente {
+    nombre : String
+    telefono : String
+    email : String
+    canal : String
+  }
+  class ItemPedido {
+    sku : String
+    cantidad : Integer
+    precioUnitario : Number
+    subtotal : Number
+  }
+  enum EstadoPedido {
+    CONFIRMADO
+    RECHAZADO
+  }
+  class PedidoServicio {
+    + crearPedido(solicitud) : Pedido
+    + listar() : Pedido[]
+    + obtener(id) : Pedido
+  }
+  interface PedidoRepositorio <<Repository>> {
+    + siguienteId() : String
+    + guardar(pedido) : Pedido
+    + buscarPorId(id) : Pedido
+    + listar() : Pedido[]
+  }
+  class PedidoRepositorioMemoria
+}
+
+package "Servicio Inventario" {
+  class Producto {
+    sku : String
+    nombre : String
+    precio : Number
+    stock : Integer
+  }
+  class Reserva {
+    pedidoId : String
+    total : Number
+    fecha : Date
+  }
+  class InventarioServicio {
+    + listarProductos() : Producto[]
+    + obtenerProducto(sku) : Producto
+    + reservar(pedidoId, items) : Reserva
+  }
+  interface ProductoRepositorio <<Repository>> {
+    + listar() : Producto[]
+    + buscarPorSku(sku) : Producto
+    + guardar(producto) : Producto
+  }
+  class ProductoRepositorioMemoria
+}
+
+package "Servicio Notificaciones" {
+  class Notificador {
+    + notificar(cliente, mensaje) : Notificacion
+  }
+  interface EstrategiaNotificacion <<Strategy>> {
+    + canal : String
+    + enviar(cliente, mensaje)
+  }
+  class EstrategiaEmail
+  class EstrategiaSms
+  class EstrategiaWhatsApp
+}
+
+package "Componentes compartidos" {
+  class CircuitBreaker <<Circuit Breaker>> {
+    - estado : CERRADO | ABIERTO | SEMI_ABIERTO
+    - fallosConsecutivos : Integer
+    - umbralFallos : Integer
+    - tiempoAbiertoMs : Integer
+    + ejecutar(operacion)
+    + resumen()
+  }
+  interface EventBus <<Publisher/Subscriber>> {
+    + publicar(tema, datos)
+    + suscribir(tema, urlCallback)
+  }
+  class Evento {
+    id : String
+    tema : String
+    origen : String
+    datos : Object
+    fecha : Date
+  }
+}
+
+Pedido "1" *-- "1..*" ItemPedido
+Pedido "*" --> "1" Cliente
+Pedido --> EstadoPedido
+PedidoServicio --> PedidoRepositorio
+PedidoRepositorioMemoria ..|> PedidoRepositorio
+PedidoServicio --> CircuitBreaker
+PedidoServicio --> EventBus
+PedidoServicio ..> InventarioServicio : HTTP POST /reservas
+PedidoServicio ..> Pedido : crea
+
+InventarioServicio --> ProductoRepositorio
+ProductoRepositorioMemoria ..|> ProductoRepositorio
+InventarioServicio ..> Reserva : crea
+ProductoRepositorio "1" o-- "*" Producto
+
+Notificador "1" o-- "1..*" EstrategiaNotificacion
+EstrategiaEmail ..|> EstrategiaNotificacion
+EstrategiaSms ..|> EstrategiaNotificacion
+EstrategiaWhatsApp ..|> EstrategiaNotificacion
+EventBus ..> Evento : transporta
+Notificador ..> Evento : reacciona a
+
+Cliente -[hidden]down- InventarioServicio
+ItemPedido -[hidden]down- ProductoRepositorioMemoria
+@enduml

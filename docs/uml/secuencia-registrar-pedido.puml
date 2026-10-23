@@ -1,0 +1,53 @@
+@startuml secuencia-registrar-pedido
+skinparam dpi 170
+skinparam shadowing false
+skinparam defaultFontName Arial
+skinparam sequenceMessageAlign center
+skinparam sequence {
+  ParticipantBackgroundColor #FFEDD5
+  ParticipantBorderColor #9A3412
+  LifeLineBorderColor #9CA3AF
+}
+autonumber
+
+actor Tendero
+participant "Consola web" as UI
+participant "API Gateway" as GW
+participant "Servicio\nPedidos" as PED
+participant "CircuitBreaker\n+ Retry" as CB
+participant "Servicio\nInventario" as INV
+queue "Broker de\neventos" as BRK
+participant "Servicio\nNotificaciones" as NOT
+
+Tendero -> UI : Diligencia y envía el pedido
+UI -> GW : POST /api/pedidos
+GW -> GW : Rate limiting por IP
+GW -> PED : POST /pedidos\n(x-correlation-id)
+PED -> PED : validar(cliente, items)
+PED -> CB : ejecutar(reservar)
+CB -> INV : POST /reservas
+
+alt Inventario suficiente
+  INV --> CB : 201 Reserva (detalle, total)
+  CB --> PED : reserva
+  PED -> PED : guardar(pedido CONFIRMADO)
+  PED -> BRK : publicar("pedido.confirmado")
+  BRK --> PED : 202 Aceptado
+  PED --> GW : 201 Pedido
+  GW --> UI : 201 Pedido
+  UI --> Tendero : "Pedido confirmado"
+  BRK ->> NOT : POST /eventos (asíncrono)
+  NOT -> NOT : Notificador.notificar()\nStrategy según canal
+else Stock insuficiente
+  INV --> CB : 409 Conflicto
+  CB --> PED : error de negocio (no abre el circuito)
+  PED -> BRK : publicar("pedido.rechazado")
+  PED --> GW : 409 Pedido RECHAZADO
+  GW --> UI : 409 Pedido RECHAZADO
+else Inventario no responde
+  CB -> INV : reintentos con espera exponencial
+  CB --> PED : falla (suma al umbral; al llegar a 3 abre el circuito)
+  PED --> GW : 503 INVENTARIO_NO_DISPONIBLE
+  GW --> UI : 503 Intente más tarde
+end
+@enduml

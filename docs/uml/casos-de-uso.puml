@@ -1,0 +1,45 @@
+@startuml casos-de-uso
+left to right direction
+skinparam dpi 170
+skinparam shadowing false
+skinparam defaultFontName Arial
+skinparam actorStyle awesome
+skinparam usecase {
+  BackgroundColor #FFF7ED
+  BorderColor #C2410C
+}
+skinparam rectangle {
+  BorderColor #9A3412
+}
+
+actor "Tendero\n(cliente)" as Tendero
+actor "Asesor\ncomercial" as Asesor
+actor "Jefe de\nbodega" as Bodega
+actor "Administrador\nde TI" as Admin
+actor "Proveedor de\nmensajería" as Mensajeria <<sistema externo>>
+
+rectangle "Plataforma de pedidos MercaOriente" {
+  usecase "Consultar catálogo\ny disponibilidad" as UC1
+  usecase "Registrar pedido" as UC2
+  usecase "Reservar\ninventario" as UC3
+  usecase "Consultar estado\ndel pedido" as UC4
+  usecase "Notificar estado\ndel pedido" as UC5
+  usecase "Actualizar\nstock" as UC6
+  usecase "Monitorear salud\nde los servicios" as UC7
+  usecase "Simular falla y\nverificar resiliencia" as UC8
+}
+
+Tendero --> UC1
+Tendero --> UC2
+Tendero --> UC4
+Asesor --> UC2
+Asesor --> UC4
+Bodega --> UC1
+Bodega --> UC6
+Admin --> UC7
+Admin --> UC8
+
+UC2 ..> UC3 : <<include>>
+UC2 ..> UC5 : <<include>>
+UC5 --> Mensajeria
+@enduml
