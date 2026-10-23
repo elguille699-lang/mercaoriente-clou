@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>MercaOriente · Consola de pedidos</title>
+  <link rel="stylesheet" href="estilos.css">
+</head>
+<body>
+  <header>
+    <div>
+      <h1>MercaOriente S.A.S.</h1>
+      <p>Prototipo de arquitectura de microservicios en la nube</p>
+    </div>
+    <span id="estado-general" class="insignia">Consultando…</span>
+  </header>
+
+  <main>
+    <section class="tarjeta ancho">
+      <h2>Salud de los servicios <small>(Health Endpoint Monitoring)</small></h2>
+      <div id="salud" class="servicios"></div>
+    </section>
+
+    <section class="tarjeta">
+      <h2>Catálogo e inventario</h2>
+      <table>
+        <thead>
+          <tr><th>SKU</th><th>Producto</th><th class="num">Precio</th><th class="num">Stock</th><th class="num">Pedir</th></tr>
+        </thead>
+        <tbody id="productos"></tbody>
+      </table>
+    </section>
+
+    <section class="tarjeta">
+      <h2>Nuevo pedido</h2>
+      <form id="form-pedido">
+        <label>Cliente
+          <input name="nombre" required value="Tienda La Esquina">
+        </label>
+        <label>Teléfono
+          <input name="telefono" value="3001234567">
+        </label>
+        <label>Canal de notificación <small>(Strategy)</small>
+          <select name="canal">
+            <option value="whatsapp">WhatsApp</option>
+            <option value="sms">SMS</option>
+            <option value="email">Correo</option>
+          </select>
+        </label>
+        <button type="submit">Registrar pedido</button>
+      </form>
+      <div id="resultado" class="resultado"></div>
+
+      <h3>Circuit Breaker hacia inventario</h3>
+      <p id="circuito" class="circuito">—</p>
+      <div class="acciones">
+        <button type="button" class="secundario" data-falla="true">Simular caída de inventario</button>
+        <button type="button" class="secundario" data-falla="false">Restablecer inventario</button>
+      </div>
+    </section>
+
+    <section class="tarjeta">
+      <h2>Pedidos</h2>
+      <ul id="pedidos" class="lista"></ul>
+    </section>
+
+    <section class="tarjeta">
+      <h2>Notificaciones <small>(Publicador/Suscriptor)</small></h2>
+      <ul id="notificaciones" class="lista"></ul>
+    </section>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
