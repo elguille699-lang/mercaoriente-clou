@@ -1,0 +1,51 @@
+x-servicio: &servicio
+  build: .
+  image: mercaoriente-cloud:1.0.0
+  restart: unless-stopped
+  environment: &entorno
+    BROKER_URL: http://broker:4000
+    INVENTARIO_URL: http://inventario:4001
+    PEDIDOS_URL: http://pedidos:4002
+    NOTIFICACIONES_URL: http://notificaciones:4003
+    NOTIFICACIONES_CALLBACK_URL: http://notificaciones:4003/eventos
+
+services:
+  broker:
+    <<: *servicio
+    environment:
+      <<: *entorno
+      SERVICE: broker
+      PORT: "4000"
+
+  inventario:
+    <<: *servicio
+    environment:
+      <<: *entorno
+      SERVICE: inventario
+      PORT: "4001"
+
+  pedidos:
+    <<: *servicio
+    environment:
+      <<: *entorno
+      SERVICE: pedidos
+      PORT: "4002"
+    depends_on: [broker, inventario]
+
+  notificaciones:
+    <<: *servicio
+    environment:
+      <<: *entorno
+      SERVICE: notificaciones
+      PORT: "4003"
+    depends_on: [broker]
+
+  gateway:
+    <<: *servicio
+    environment:
+      <<: *entorno
+      SERVICE: gateway
+      PORT: "8080"
+    ports:
+      - "80:8080"
+    depends_on: [inventario, pedidos, notificaciones, broker]
