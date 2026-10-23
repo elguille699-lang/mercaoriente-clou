@@ -1,0 +1,21 @@
+{
+  "name": "mercaoriente-cloud",
+  "version": "1.0.0",
+  "description": "Prototipo de arquitectura de microservicios en la nube para MercaOriente S.A.S. (Actividad 2 - Arquitectura de Software).",
+  "type": "module",
+  "private": true,
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "start": "node scripts/iniciar-todo.js",
+    "start:servicio": "node src/index.js",
+    "demo": "node scripts/demo.js",
+    "test": "node --test test/"
+  },
+  "author": "Guillermo Andres Garcia Perea",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.21.2"
+  }
+}
